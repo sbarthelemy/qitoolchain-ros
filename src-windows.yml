@@ -1,0 +1,92 @@
+- git:
+    local-name: catkin
+    uri: https://github.com/ros-gbp/catkin-release.git
+    version: release/indigo/catkin/0.6.14-0
+- git:
+    local-name: common_msgs/actionlib_msgs
+    uri: https://github.com/ros-gbp/common_msgs-release.git
+    version: release/indigo/actionlib_msgs/1.11.8-0
+- git:
+    local-name: common_msgs/diagnostic_msgs
+    uri: https://github.com/ros-gbp/common_msgs-release.git
+    version: release/indigo/diagnostic_msgs/1.11.8-0
+- git:
+    local-name: common_msgs/geometry_msgs
+    uri: https://github.com/ros-gbp/common_msgs-release.git
+    version: release/indigo/geometry_msgs/1.11.8-0
+- git:
+    local-name: common_msgs/nav_msgs
+    uri: https://github.com/ros-gbp/common_msgs-release.git
+    version: release/indigo/nav_msgs/1.11.8-0
+- git:
+    local-name: common_msgs/sensor_msgs
+    uri: https://github.com/ros-gbp/common_msgs-release.git
+    version: release/indigo/sensor_msgs/1.11.8-0
+- git:
+    local-name: common_msgs/visualization_msgs
+    uri: https://github.com/ros-gbp/common_msgs-release.git
+    version: release/indigo/visualization_msgs/1.11.8-0
+- git:
+    local-name: gencpp
+    uri: https://github.com/ros-gbp/gencpp-release.git
+    version: release/indigo/gencpp/0.5.3-0
+- git:
+    local-name: genlisp
+    uri: https://github.com/ros-gbp/genlisp-release.git
+    version: release/indigo/genlisp/0.4.15-0
+- git:
+    local-name: genmsg
+    uri: https://github.com/ros-gbp/genmsg-release.git
+    version: release/indigo/genmsg/0.5.6-0
+- git:
+    local-name: genpy
+    uri: https://github.com/ros-gbp/genpy-release.git
+    version: release/indigo/genpy/0.5.4-0
+- git:
+    local-name: message_generation
+    uri: https://github.com/ros-gbp/message_generation-release.git
+    version: release/indigo/message_generation/0.2.10-0
+- git:
+    local-name: message_runtime
+    uri: https://github.com/ros-gbp/message_runtime-release.git
+    version: release/indigo/message_runtime/0.4.12-0
+- git:
+    local-name: naoqi_bridge_msgs
+    uri: https://github.com/ros-naoqi/naoqi_bridge_msgs-release.git
+    version: release/indigo/naoqi_bridge_msgs/0.0.2-0
+- git:
+    local-name: roscpp_core/cpp_common
+    uri: https://github.com/ros-gbp/roscpp_core-release.git
+    version: release/indigo/cpp_common/0.5.6-0
+- git:
+    local-name: roscpp_core/roscpp_serialization
+    uri: https://github.com/ros-gbp/roscpp_core-release.git
+    version: release/indigo/roscpp_serialization/0.5.6-0
+- git:
+    local-name: roscpp_core/roscpp_traits
+    uri: https://github.com/ros-gbp/roscpp_core-release.git
+    version: release/indigo/roscpp_traits/0.5.6-0
+- git:
+    local-name: roscpp_core/rostime
+    uri: https://github.com/ros-gbp/roscpp_core-release.git
+    version: release/indigo/rostime/0.5.6-0
+- git:
+    local-name: std_msgs
+    uri: https://github.com/ros-gbp/std_msgs-release.git
+    version: release/indigo/std_msgs/0.5.9-1
+- git:
+    local-name: tf2_msgs
+    uri: https://github.com/ros-gbp/geometry_experimental-release.git
+    version: release/indigo/tf2_msgs/0.5.12-0
+- git:
+    local-name: tf2
+    uri: https://github.com/ros-gbp/geometry_experimental-release.git
+    version: release/indigo/tf2/0.5.9-0
+- git:
+    local-name: cmake-modules
+    uri: https://github.com/ros-gbp/cmake_modules-release.git
+    version: release/indigo/cmake_modules/0.3.3-0
+- git:
+    local-name: tf2_eigen
+    uri: https://github.com/ros-gbp/geometry_experimental-release.git
+    version: release/indigo/tf2_eigen/0.5.13-0

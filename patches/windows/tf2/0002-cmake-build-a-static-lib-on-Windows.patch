@@ -1,0 +1,33 @@
+From 8b5649172d4abe3df424f471de66c5648a1283d8 Mon Sep 17 00:00:00 2001
+From: dmerejkowsky <dmerejkowsky@aldebaran-robotics.com>
+Date: Fri, 6 May 2016 14:29:03 +0200
+Subject: [PATCH] cmake: build a static lib on Windows
+
+they forgot to export their symbols ...
+---
+ CMakeLists.txt | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b4c425f..24493ef 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -17,7 +17,15 @@ include_directories (src/bt)
+ # export user definitions
+
+ #CPP Libraries
+-add_library(tf2 src/cache.cpp src/buffer_core.cpp src/static_cache.cpp)
++if(WiN32)
++  # tf2 guys forgot to export their symbols, so we need
++  # a static build on Windows.
++  set(lib_type STATIC)
++else()
++  set(lib_type SHARED)
++endif()
++
++add_library(tf2  ${lib_type} src/cache.cpp src/buffer_core.cpp src/static_cache.cpp)
+ target_link_libraries(tf2 ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${console_bridge_LIBRARIES})
+ add_dependencies(tf2 tf2_msgs_gencpp)
+
+--
+1.8.4.msysgit.0

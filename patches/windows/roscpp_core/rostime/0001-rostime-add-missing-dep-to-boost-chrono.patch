@@ -1,0 +1,24 @@
+From 2c774db6c1bbc7b8c27cea72d1b813a7e8805ad2 Mon Sep 17 00:00:00 2001
+From: dmerejkowsky <dmerejkowsky@aldebaran-robotics.com>
+Date: Fri, 6 May 2016 11:30:37 +0200
+Subject: [PATCH] rostime: add missing dep to boost::chrono
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7ecc67f..80c8780 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
+ project(rostime)
+
+ find_package(catkin REQUIRED COMPONENTS cpp_common)
+-find_package(Boost REQUIRED COMPONENTS date_time system thread)
++find_package(Boost REQUIRED COMPONENTS chrono date_time system thread)
+ catkin_package(
+   INCLUDE_DIRS include
+   LIBRARIES ${PROJECT_NAME}
+--
+1.8.4.msysgit.0

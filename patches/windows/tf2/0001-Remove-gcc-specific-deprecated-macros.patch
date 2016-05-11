@@ -1,0 +1,56 @@
+From cf95e56b89ac69f23769357d8d807bf9aacc6b79 Mon Sep 17 00:00:00 2001
+From: dmerejkowsky <dmerejkowsky@aldebaran-robotics.com>
+Date: Fri, 6 May 2016 11:41:52 +0200
+Subject: [PATCH 2/3] Remove gcc specific deprecated macros
+
+---
+ include/tf2/LinearMath/Matrix3x3.h  | 4 ++--
+ include/tf2/LinearMath/Quaternion.h | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/include/tf2/LinearMath/Matrix3x3.h b/include/tf2/LinearMath/Matrix3x3.h
+index 00d03f4..f99802e 100644
+--- a/include/tf2/LinearMath/Matrix3x3.h
++++ b/include/tf2/LinearMath/Matrix3x3.h
+@@ -163,7 +163,7 @@ public:
+ 	*  @param pitch Pitch about Y axis
+ 	*  @param roll Roll about X axis
+ 	*/
+-	void setEulerZYX(const tf2Scalar& yaw, const tf2Scalar& pitch, const tf2Scalar& roll) __attribute__((deprecated))
++	void setEulerZYX(const tf2Scalar& yaw, const tf2Scalar& pitch, const tf2Scalar& roll)
+ 	{
+ 		setEulerYPR(yaw, pitch, roll);
+ 	}
+@@ -279,7 +279,7 @@ public:
+ 	* @param pitch Pitch around Y axis
+ 	* @param roll around X axis
+  	* @param solution_number Which solution of two possible solutions ( 1 or 2) are possible values*/
+-	__attribute__((deprecated)) void getEulerZYX(tf2Scalar& yaw, tf2Scalar& pitch, tf2Scalar& roll, unsigned int solution_number = 1) const
++	void getEulerZYX(tf2Scalar& yaw, tf2Scalar& pitch, tf2Scalar& roll, unsigned int solution_number = 1) const
+ 	{
+ 		getEulerYPR(yaw, pitch, roll, solution_number);
+ 	};
+diff --git a/include/tf2/LinearMath/Quaternion.h b/include/tf2/LinearMath/Quaternion.h
+index 7bfde4c..babd0be 100644
+--- a/include/tf2/LinearMath/Quaternion.h
++++ b/include/tf2/LinearMath/Quaternion.h
+@@ -47,7 +47,7 @@ public:
+    * @param yaw Angle around Y unless TF2_EULER_DEFAULT_ZYX defined then Z
+    * @param pitch Angle around X unless TF2_EULER_DEFAULT_ZYX defined then Y
+    * @param roll Angle around Z unless TF2_EULER_DEFAULT_ZYX defined then X */
+-  Quaternion(const tf2Scalar& yaw, const tf2Scalar& pitch, const tf2Scalar& roll) __attribute__((deprecated))
++  Quaternion(const tf2Scalar& yaw, const tf2Scalar& pitch, const tf2Scalar& roll)
+ 	{
+ #ifndef TF2_EULER_DEFAULT_ZYX
+ 		setEuler(yaw, pitch, roll);
+@@ -110,7 +110,7 @@ public:
+    * @param yaw Angle around Z
+    * @param pitch Angle around Y
+    * @param roll Angle around X */
+-  void setEulerZYX(const tf2Scalar& yaw, const tf2Scalar& pitch, const tf2Scalar& roll) __attribute__((deprecated))
++  void setEulerZYX(const tf2Scalar& yaw, const tf2Scalar& pitch, const tf2Scalar& roll)
+ 	{
+           setRPY(roll, pitch, yaw);
+ 	}
+--
+1.8.4.msysgit.0

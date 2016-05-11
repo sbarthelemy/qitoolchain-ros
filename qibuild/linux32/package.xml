@@ -1,0 +1,4 @@
+<package name="ros" version="indigo-r3" target="linux32" >
+    <depends buildtime="true" runtime="true" names="console_bridge bzip2 boost lz4" />
+    <license>BSD or Apache 2.0</license>
+</package>

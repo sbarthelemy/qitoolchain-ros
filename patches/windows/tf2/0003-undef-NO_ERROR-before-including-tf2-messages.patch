@@ -1,0 +1,26 @@
+From 7fac9ac946f7c627766ba4cd9f145de549e93731 Mon Sep 17 00:00:00 2001
+From: dmerejkowsky <dmerejkowsky@aldebaran-robotics.com>
+Date: Fri, 6 May 2016 13:20:21 +0200
+Subject: [PATCH 3/3] #undef NO_ERROR before including tf2 messages
+
+NO_ERROR is already defined by some Windows headers
+---
+ src/buffer_core.cpp | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/src/buffer_core.cpp b/src/buffer_core.cpp
+index b83ca5b..a019bfb 100644
+--- a/src/buffer_core.cpp
++++ b/src/buffer_core.cpp
+@@ -32,6 +32,9 @@
+ #include "tf2/buffer_core.h"
+ #include "tf2/time_cache.h"
+ #include "tf2/exceptions.h"
++#if _WIN32
++# undef NO_ERROR
++#endif
+ #include "tf2_msgs/TF2Error.h"
+
+ #include <assert.h>
+--
+1.8.4.msysgit.0

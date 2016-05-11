@@ -1,0 +1,25 @@
+From 6b1ae68dfddd231a94736c5cd3688ff4da723ef6 Mon Sep 17 00:00:00 2001
+From: dmerejkowsky <dmerejkowsky@aldebaran-robotics.com>
+Date: Tue, 10 May 2016 15:01:01 +0200
+Subject: [PATCH] CMakeLists: fix runtime destination
+
+qibuild needs DLLs in bin, not lib/tf2/
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b4c425f..9ec65e2 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -24,7 +24,7 @@ add_dependencies(tf2 tf2_msgs_gencpp)
+ install(TARGETS tf2
+   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
++  RUNTIME DESTINATION "bin"
+ )
+
+ install(DIRECTORY include/${PROJECT_NAME}/
+--
+1.8.4.msysgit.0

@@ -1,0 +1,528 @@
+From cbf3a67fd22668d04708ef840e52c807c829d8b8 Mon Sep 17 00:00:00 2001
+From: dmerejkowsky <dmerejkowsky@aldebaran-robotics.com>
+Date: Tue, 10 May 2016 13:30:36 +0200
+Subject: [PATCH] Apply PR #144, plus some other changes
+
+- we add to explicitely switch to setuptools
+(was not done yet on 0.2.10)
+- and we also fixed the version number
+---
+ bin/catkin_create_pkg          |  75 -------------------------
+ bin/catkin_find_pkg            |  34 -----------
+ bin/catkin_generate_changelog  | 125 -----------------------------------------
+ bin/catkin_tag_changelog       | 123 ----------------------------------------
+ bin/catkin_test_changelog      |  51 -----------------
+ setup.py                       |  18 +++---
+ src/catkin_pkg/__init__.py     |   2 +-
+ test/test_catkin_create_pkg.py |   8 +--
+ 8 files changed, 12 insertions(+), 424 deletions(-)
+ delete mode 100644 bin/catkin_create_pkg
+ delete mode 100644 bin/catkin_find_pkg
+ delete mode 100644 bin/catkin_generate_changelog
+ delete mode 100644 bin/catkin_tag_changelog
+ delete mode 100644 bin/catkin_test_changelog
+
+diff --git a/bin/catkin_create_pkg b/bin/catkin_create_pkg
+deleted file mode 100644
+index 2f7e265..0000000
+--- a/bin/catkin_create_pkg
++++ /dev/null
+@@ -1,75 +0,0 @@
+-#!/usr/bin/env python
+-
+-"""This script creates the skeletton of a catkin package"""
+-
+-from __future__ import print_function
+-import argparse
+-import os
+-import sys
+-
+-from catkin_pkg.package_templates import create_package_files, PackageTemplate
+-
+-
+-def main(argv=sys.argv[1:], parent_path=os.getcwd()):
+-    parser = argparse.ArgumentParser(
+-        description='Creates a new catkin package')
+-    parser.add_argument('name',
+-                        nargs=1,
+-                        help='The name for the package')
+-    parser.add_argument('--meta',
+-                        action='store_true',
+-                        help='Creates meta-package files')
+-    parser.add_argument('dependencies',
+-                        nargs='*',
+-                        help='Catkin package Dependencies')
+-    parser.add_argument('-s', '--sys-deps',
+-                        nargs='*',
+-                        help='System Dependencies')
+-    parser.add_argument('-b', '--boost-comps',
+-                        nargs='*',
+-                        help='Boost Components')
+-    parser.add_argument('-V', '--pkg_version',
+-                        action='store',
+-                        help='Initial Package version')
+-    parser.add_argument('-D', '--description',
+-                        action='store',
+-                        help='Description')
+-    parser.add_argument('-l', '--license',
+-                        action='append',
+-                        help='Name for License, (e.g. BSD, MIT, GPLv3...)')
+-    parser.add_argument('-a', '--author',
+-                        action='append',
+-                        help='A single author, may be used multiple times')
+-    parser.add_argument('-m', '--maintainer',
+-                        action='append',
+-                        help='A single maintainer, may be used multiple times')
+-    rosdistro_name = os.environ['ROS_DISTRO'] if 'ROS_DISTRO' in os.environ else None
+-    parser.add_argument('--rosdistro', required=rosdistro_name is None, default=rosdistro_name, help='The ROS distro (default: environment variable ROS_DISTRO if defined)')
+-
+-    args = parser.parse_args(argv)
+-
+-    try:
+-        package_name = args.name[0]
+-        target_path = os.path.join(parent_path, package_name)
+-        package_template = PackageTemplate._create_package_template(
+-            package_name=package_name,
+-            description=args.description,
+-            licenses=args.license or [],
+-            maintainer_names=args.maintainer,
+-            author_names=args.author,
+-            version=args.pkg_version,
+-            catkin_deps=args.dependencies,
+-            system_deps=args.sys_deps,
+-            boost_comps=args.boost_comps)
+-        create_package_files(target_path=target_path,
+-                             package_template=package_template,
+-                             rosdistro=args.rosdistro,
+-                             newfiles={},
+-                             meta=args.meta)
+-        print('Successfully created files in %s. Please adjust the values in package.xml.' % target_path)
+-    except ValueError as vae:
+-        parser.error(str(vae))
+-
+-
+-if __name__ == '__main__':
+-    main()
+diff --git a/bin/catkin_find_pkg b/bin/catkin_find_pkg
+deleted file mode 100644
+index 45863be..0000000
+--- a/bin/catkin_find_pkg
++++ /dev/null
+@@ -1,34 +0,0 @@
+-#!/usr/bin/env python
+-
+-"""This script finds a catkin packages"""
+-
+-from __future__ import print_function
+-import argparse
+-import os
+-import sys
+-
+-from catkin_pkg.packages import find_packages
+-
+-
+-def main(argv=sys.argv[1:]):
+-    parser = argparse.ArgumentParser(description='Find a catkin package')
+-    parser.add_argument('pkg', help='The name of the package')
+-    parser.add_argument('base_path', nargs='?', default=os.curdir, help='The base path to crawl for packages')
+-
+-    args = parser.parse_args(argv)
+-
+-    try:
+-        packages = find_packages(args.base_path)
+-        catkin_pkg = [path for path, p in packages.items() if p.name == args.pkg]
+-        if catkin_pkg:
+-            print(catkin_pkg[0])
+-        else:
+-            print("Could not find package '%s'." % args.pkg, file=sys.stderr)
+-            sys.exit(2)
+-    except RuntimeError as e:
+-        print('ERROR: ' + str(e), file=sys.stderr)
+-        sys.exit(1)
+-
+-
+-if __name__ == '__main__':
+-    main()
+diff --git a/bin/catkin_generate_changelog b/bin/catkin_generate_changelog
+deleted file mode 100644
+index 60c8bc8..0000000
+--- a/bin/catkin_generate_changelog
++++ /dev/null
+@@ -1,125 +0,0 @@
+-#!/usr/bin/env python
+-
+-"""This script generates REP-0132 CHANGELOG.rst files for git or hg repositories"""
+-
+-from __future__ import print_function
+-
+-import argparse
+-import logging
+-import os
+-import sys
+-
+-from catkin_pkg.changelog import CHANGELOG_FILENAME
+-from catkin_pkg.changelog_generator import generate_changelog_file, generate_changelogs, get_all_changes, get_forthcoming_changes, update_changelogs
+-from catkin_pkg.changelog_generator_vcs import get_vcs_client
+-from catkin_pkg.packages import find_packages
+-
+-
+-def prompt_continue(msg, default):
+-    """Prompt the user for continuation."""
+-    if default:
+-        msg += ' [Y/n]?'
+-    else:
+-        msg += ' [y/N]?'
+-
+-    while True:
+-        response = raw_input(msg)
+-        if not response:
+-            response = 'y' if default else 'n'
+-        else:
+-            response = response.lower()
+-
+-        if response in ['y', 'n']:
+-            return response == 'y'
+-
+-        print("Response '%s' was not recognized, please use one of the following options: y, Y, n, N" % response, file=sys.stderr)
+-
+-
+-def main(sysargs=None):
+-    parser = argparse.ArgumentParser(description='Generate a REP-0132 %s' % CHANGELOG_FILENAME)
+-    parser.add_argument('-a', '--all', action='store_true', default=False,
+-        help='Generate changelog for all versions instead of only the forthcoming one (only supported when no changelog file exists yet)')
+-    parser.add_argument('--print-root', action='store_true', default=False,
+-        help='Output changelog content to the console as if there would be only one package in the root of the repository')
+-    parser.add_argument('--skip-contributors', action='store_true', default=False,
+-        help='Skip adding the list of contributors to the changelog')
+-    parser.add_argument('--skip-merges', action='store_true', default=False,
+-        help='Skip adding merge commits to the changelog')
+-    parser.add_argument('-y', '--non-interactive', action='store_true', default=False,
+-        help="Run without user interaction, confirming all questions with 'yes'")
+-    args = parser.parse_args(sysargs)
+-
+-    base_path = '.'
+-    logging.basicConfig(format='%(message)s', level=logging.DEBUG)
+-
+-    vcs_client = get_vcs_client(base_path)
+-
+-    if args.print_root:
+-        # printing status messages to stderr to allow piping the changelog to a file
+-        if args.all:
+-            print('Querying all tags and commit information...', file=sys.stderr)
+-            tag2log_entries = get_all_changes(vcs_client, skip_merges=args.skip_merges)
+-            print('Generating changelog output with all versions...', file=sys.stderr)
+-        else:
+-            print('Querying commit information since latest tag...', file=sys.stderr)
+-            tag2log_entries = get_forthcoming_changes(vcs_client, skip_merges=args.skip_merges)
+-            print('Generating changelog files with forthcoming version...', file=sys.stderr)
+-        print('', file=sys.stderr)
+-        data = generate_changelog_file('repository-level', tag2log_entries, vcs_client=vcs_client)
+-        print(data)
+-        return 0
+-
+-    # find packages
+-    packages = find_packages(base_path)
+-    if not packages:
+-        raise RuntimeError('No packages found')
+-    print('Found packages: %s' % ', '.join(sorted([p.name for p in packages.values()])))
+-
+-    # check for missing changelogs
+-    missing_changelogs = []
+-    for pkg_path, package in packages.items():
+-        changelog_path = os.path.join(base_path, pkg_path, CHANGELOG_FILENAME)
+-        if not os.path.exists(changelog_path):
+-            missing_changelogs.append(package.name)
+-
+-    if args.all and not missing_changelogs:
+-        raise RuntimeError('All packages already have a changelog. Either remove (some of) them before using --all or invoke the script without --all.')
+-
+-    if args.all and len(missing_changelogs) != len(packages):
+-        ignored = set([p.name for p in packages.values()]) - set(missing_changelogs)
+-        print('The following packages already have a changelog file and will be ignored: %s' % ', '.join(sorted(ignored)), file=sys.stderr)
+-
+-    # prompt to switch to --all
+-    if not args.all and missing_changelogs:
+-        print('Some of the packages have no changelog file: %s' % ', '.join(sorted(missing_changelogs)))
+-        print('You might consider to use --all to generate the changelogs for all versions (not only for the forthcoming version).')
+-        if not args.non_interactive and not prompt_continue('Continue without --all option', default=False):
+-            raise RuntimeError('Skipping generation, rerun the script with --all.')
+-
+-    if args.all:
+-        print('Querying all tags and commit information...')
+-        tag2log_entries = get_all_changes(vcs_client, skip_merges=args.skip_merges)
+-        print('Generating changelog files with all versions...')
+-        generate_changelogs(base_path, packages, tag2log_entries, logger=logging, vcs_client=vcs_client, skip_contributors=args.skip_contributors)
+-    else:
+-        print('Querying commit information since latest tag...')
+-        tag2log_entries = get_forthcoming_changes(vcs_client, skip_merges=args.skip_merges)
+-        # separate packages with/without a changelog file
+-        packages_without = {pkg_path: package for pkg_path, package in packages.items() if package.name in missing_changelogs}
+-        if packages_without:
+-            print('Generating changelog files with forthcoming version...')
+-            generate_changelogs(base_path, packages_without, tag2log_entries, logger=logging, vcs_client=vcs_client, skip_contributors=args.skip_contributors)
+-        packages_with = {pkg_path: package for pkg_path, package in packages.items() if package.name not in missing_changelogs}
+-        if packages_with:
+-            print('Updating forthcoming section of changelog files...')
+-            update_changelogs(base_path, packages_with, tag2log_entries, logger=logging, vcs_client=vcs_client, skip_contributors=args.skip_contributors)
+-    print('Done.')
+-    print('Please review the extracted commit messages and consolidate the changelog entries before committing the files!')
+-
+-
+-if __name__ == '__main__':
+-    try:
+-        main()
+-    except RuntimeError as e:
+-        print('ERROR: ' + str(e), file=sys.stderr)
+-        sys.exit(1)
+diff --git a/bin/catkin_tag_changelog b/bin/catkin_tag_changelog
+deleted file mode 100644
+index 7090f9e..0000000
+--- a/bin/catkin_tag_changelog
++++ /dev/null
+@@ -1,123 +0,0 @@
+-#!/usr/bin/env python
+-
+-"""This script renames the forthcoming section in changelog files with the upcoming version and the current date"""
+-
+-from __future__ import print_function
+-
+-import argparse
+-import datetime
+-import docutils.core
+-import os
+-import re
+-import sys
+-
+-from catkin_pkg.changelog import CHANGELOG_FILENAME, get_changelog_from_path
+-from catkin_pkg.changelog_generator import FORTHCOMING_LABEL
+-from catkin_pkg.package_version import bump_version
+-from catkin_pkg.packages import find_packages, verify_equal_package_versions
+-
+-
+-def get_forthcoming_label(rst):
+-    document = docutils.core.publish_doctree(rst)
+-    forthcoming_label = None
+-    for child in document.children:
+-        title = None
+-        if isinstance(child, docutils.nodes.subtitle):
+-            title = child
+-        elif isinstance(child, docutils.nodes.section):
+-            section = child
+-            if len(section.children) > 0 and isinstance(section.children[0], docutils.nodes.title):
+-                title = section.children[0]
+-        if title and len(title.children) > 0 and isinstance(title.children[0], docutils.nodes.Text):
+-            title_text = title.children[0].rawsource
+-            if FORTHCOMING_LABEL.lower() in title_text.lower():
+-                if forthcoming_label:
+-                    raise RuntimeError('Found multiple forthcoming sections')
+-                forthcoming_label = title_text
+-    return forthcoming_label
+-
+-
+-def rename_section(data, old_label, new_label):
+-    valid_section_characters = '!"#$%&\'()*+,-./:;<=>?@[\\]^_`{|}~'
+-
+-    def replace_section(match):
+-        section_char = match.group(2)[0]
+-        return new_label + '\n' + section_char * len(new_label)
+-    pattern = '^(' + re.escape(old_label) + ')\n([' + re.escape(valid_section_characters) + ']+)$'
+-    data, count = re.subn(pattern, replace_section, data, flags=re.MULTILINE)
+-    if count == 0:
+-        raise RuntimeError('Could not find section')
+-    if count > 1:
+-        raise RuntimeError('Found multiple matching sections')
+-    return data
+-
+-
+-def main(sysargs=None):
+-    parser = argparse.ArgumentParser(description='Tag the forthcoming section in the changelog files with an upcoming version number')
+-    parser.add_argument('--bump', choices=('major', 'minor', 'patch'), default='patch', help='Which part of the version number to bump? (default: %(default)s)')
+-    args = parser.parse_args(sysargs)
+-
+-    base_path = '.'
+-
+-    # find packages
+-    packages = find_packages(base_path)
+-    if not packages:
+-        raise RuntimeError('No packages found')
+-    print('Found packages: %s' % ', '.join([p.name for p in packages.values()]))
+-
+-    # fetch current version and verify that all packages have same version number
+-    old_version = verify_equal_package_versions(packages.values())
+-    new_version = bump_version(old_version, args.bump)
+-    print('Tag version %s' % new_version)
+-
+-    # check for changelog entries
+-    changelogs = []
+-    missing_forthcoming = []
+-    already_tagged = []
+-    for pkg_path, package in packages.items():
+-        changelog_path = os.path.join(base_path, pkg_path, CHANGELOG_FILENAME)
+-        if not os.path.exists(changelog_path):
+-            missing_forthcoming.append(package.name)
+-            continue
+-        changelog = get_changelog_from_path(changelog_path, package.name)
+-        if not changelog:
+-            missing_forthcoming.append(package.name)
+-            continue
+-        # check that forthcoming section exists
+-        forthcoming_label = get_forthcoming_label(changelog.rst)
+-        if not forthcoming_label:
+-            missing_forthcoming.append(package.name)
+-            continue
+-        # check that new_version section does not exist yet
+-        try:
+-            changelog.get_content_of_version(new_version)
+-            already_tagged.append(package.name)
+-            continue
+-        except KeyError:
+-            pass
+-        changelogs.append((package.name, changelog_path, changelog, forthcoming_label))
+-    if missing_forthcoming:
+-        print('The following packages do not have a forthcoming section in their changelog file: %s' % ', '.join(sorted(missing_forthcoming)), file=sys.stderr)
+-    if already_tagged:
+-        print("The following packages do already have a section '%s' in their changelog file: %s" % (new_version, ', '.join(sorted(already_tagged))), file=sys.stderr)
+-
+-    # rename forthcoming sections to new_version including current date
+-    new_changelog_data = []
+-    new_label = '%s (%s)' % (new_version, datetime.date.today().isoformat())
+-    for (pkg_name, changelog_path, changelog, forthcoming_label) in changelogs:
+-        print("Renaming section '%s' to '%s' in package '%s'..." % (forthcoming_label, new_label, pkg_name))
+-        data = rename_section(changelog.rst, forthcoming_label, new_label)
+-        new_changelog_data.append((changelog_path, data))
+-
+-    print('Writing updated changelog files...')
+-    for (changelog_path, data) in new_changelog_data:
+-        with open(changelog_path, 'w') as f:
+-            f.write(data)
+-
+-
+-if __name__ == '__main__':
+-    try:
+-        main()
+-    except Exception as e:
+-        print(e, file=sys.stderr)
+-        sys.exit(1)
+diff --git a/bin/catkin_test_changelog b/bin/catkin_test_changelog
+deleted file mode 100644
+index 7d1d9d6..0000000
+--- a/bin/catkin_test_changelog
++++ /dev/null
+@@ -1,51 +0,0 @@
+-#!/usr/bin/env python
+-
+-"""This script tests REP-0132 changelog files"""
+-
+-from __future__ import print_function
+-
+-import argparse
+-import logging
+-import os
+-import sys
+-
+-import catkin_pkg.changelog
+-from catkin_pkg.changelog import Changelog, CHANGELOG_FILENAME
+-from catkin_pkg.changelog import populate_changelog_from_rst
+-
+-
+-def main(sysargs=None):
+-    parser = argparse.ArgumentParser(
+-        description="Tests a REP-0132 %s" % CHANGELOG_FILENAME)
+-    parser.add_argument(
+-        'changelog_file',
+-        help="%s file to parse" % CHANGELOG_FILENAME,
+-        default='.',
+-        nargs='?')
+-
+-    args = parser.parse_args(sysargs)
+-
+-    if os.path.isdir(args.changelog_file):
+-        changelog_file = os.path.join(args.changelog_file, CHANGELOG_FILENAME)
+-        if not os.path.exists(changelog_file):
+-            print("No {0} file in given directory: '{1}'"
+-                  .format(CHANGELOG_FILENAME, args.changelog_file), file=sys.stderr)
+-            return 1
+-    else:
+-        changelog_file = args.changelog_file
+-        if not os.path.exists(changelog_file):
+-            print("{0} file given does not exist: '{1}'"
+-                  .format(CHANGELOG_FILENAME, args.changelog_file), file=sys.stderr)
+-            return 1
+-
+-    if os.path.basename(changelog_file) != CHANGELOG_FILENAME:
+-        print("WARNING: changelog file name should be %s" % CHANGELOG_FILENAME)
+-
+-    logging.basicConfig()
+-    catkin_pkg.changelog.log.setLevel(logging.DEBUG)
+-    changelog = Changelog()
+-    with open(changelog_file, 'r') as f:
+-        print(populate_changelog_from_rst(changelog, f.read()))
+-
+-if __name__ == '__main__':
+-    sys.exit(main())
+diff --git a/setup.py b/setup.py
+index 4b6bfd7..dc44217 100644
+--- a/setup.py
++++ b/setup.py
+@@ -1,6 +1,6 @@
+ #!/usr/bin/env python
+
+-from distutils.core import setup
++from setuptools import setup
+
+ import os
+ import sys
+@@ -15,13 +15,15 @@ setup(
+     packages=['catkin_pkg'],
+     package_dir={'': 'src'},
+     package_data={'catkin_pkg': ['templates/*.in']},
+-    scripts=[
+-        'bin/catkin_create_pkg',
+-        'bin/catkin_find_pkg',
+-        'bin/catkin_generate_changelog',
+-        'bin/catkin_tag_changelog',
+-        'bin/catkin_test_changelog'
+-    ],
++    entry_points={
++    	'console_scripts' : [
++            'catkin_create_pkg         = catkin_pkg.cli:catkin_create_pkg',
++            'catkin_find_pkg           = catkin_pkg.cli:catkin_find_pkg',
++            'catkin_generate_changelog = catkin_pkg.cli:catkin_generate_changelog',
++            'catkin_tag_changelog      = catkin_pkg.cli:catkin_tag_changelog',
++            'catkin_test_changelog     = catkin_pkg.cli:catkin_test_changelog',
++	 ]
++    },
+     author='Dirk Thomas',
+     author_email='dthomas@osrfoundation.org',
+     url='http://wiki.ros.org/catkin_pkg',
+diff --git a/src/catkin_pkg/__init__.py b/src/catkin_pkg/__init__.py
+index fd1f2aa..235830e 100644
+--- a/src/catkin_pkg/__init__.py
++++ b/src/catkin_pkg/__init__.py
+@@ -34,4 +34,4 @@
+ Library for retrieving information about catkin packages.
+ """
+
+-__version__ = '0.2.10'
++__version__ = '0.2.10-win1'
+diff --git a/test/test_catkin_create_pkg.py b/test/test_catkin_create_pkg.py
+index 4c36612..4056849 100644
+--- a/test/test_catkin_create_pkg.py
++++ b/test/test_catkin_create_pkg.py
+@@ -9,13 +9,7 @@ except ImportError as impe:
+     raise ImportError(
+         'Please adjust your pythonpath before running this test: %s' % str(impe))
+
+-import imp
+-imp.load_source('catkin_create_pkg',
+-                os.path.join(os.path.dirname(__file__),
+-                             '..', 'bin', 'catkin_create_pkg'))
+-
+-from catkin_create_pkg import main
+-
++from catkin_pkg.cli import catkin_create_pkg as main
+
+ class CreatePkgTest(unittest.TestCase):
+
+--
+1.8.4.msysgit.0
