@@ -1,0 +1,25 @@
+From 46c0c86151fcbd78de1d8d0326a21775770c4e95 Mon Sep 17 00:00:00 2001
+From: Dimitri Merejkowsky <dmerejkowsky@aldebaran.com>
+Date: Thu, 12 May 2016 11:05:02 +0200
+Subject: [PATCH] Build a static lib
+
+---
+ CMakeLists.txt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index b4c425f..f5d2523 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -17,7 +17,7 @@ include_directories (src/bt)
+ # export user definitions
+ 
+ #CPP Libraries
+-add_library(tf2 src/cache.cpp src/buffer_core.cpp src/static_cache.cpp)
++add_library(tf2 STATIC src/cache.cpp src/buffer_core.cpp src/static_cache.cpp)
+ target_link_libraries(tf2 ${Boost_LIBRARIES} ${catkin_LIBRARIES} ${console_bridge_LIBRARIES})
+ add_dependencies(tf2 tf2_msgs_gencpp)
+ 
+-- 
+2.8.2
+
