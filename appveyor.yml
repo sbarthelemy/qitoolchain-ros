@@ -1,0 +1,21 @@
+configuration: Release
+
+install:
+- pip install empy catkin_pkg
+- set PATH=C:\Python27\scripts;%PATH%
+- git clone https://github.com/sbarthelemy/qibuild.git --branch master --depth 1 deps/qibuild
+- pip install ./deps/qibuild
+- git clone https://github.com/sbarthelemy/toolchains.git --branch master --depth 1 deps/toolchains
+- ps: |
+    $tc = "master-host"
+    & qitoolchain create $tc file:///$env:APPVEYOR_BUILD_FOLDER/deps/toolchains/feeds/win64-vs2015.xml
+    & qitoolchain info $tc
+    & qibuild add-config win64-vs2015 -t $tc
+
+before_build:
+# cfr https://www.appveyor.com/docs/lang/cpp/
+- call "C:\Program Files\Microsoft SDKs\Windows\v7.1\Bin\SetEnv.cmd" /x64
+- call "C:\Program Files (x86)\Microsoft Visual Studio 14.0\VC\vcvarsall.bat" x86_amd64
+
+build_script:
+- python build.py --config win64-vs2015

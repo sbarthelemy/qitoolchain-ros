@@ -25,6 +25,7 @@ KNOWN_TARGETS = [
     "linux64",
     "mac64",
     "win32-vs2013",
+    "win64-vs2015",
 ]
 
 def get_platform(build_config):

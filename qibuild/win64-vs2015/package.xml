@@ -1,0 +1,4 @@
+<package name="ros" version="indigo-r0" target="win64-vs2015">
+    <depends buildtime="true" runtime="true" names="boost console_bridge" />
+    <license>BSD or Apache 2.0</license>
+</package>
